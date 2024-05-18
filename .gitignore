@@ -1,0 +1,16 @@
+*.asv
+*.json
+*.geojson
+*.nc
+*.png
+*.gif
+*.jpg
+*.xml
+*.so6
+*.csv
+*.pdf
+*.xlsx
+*.zip
+figures/
+code/figures
+test/
