@@ -27,7 +27,7 @@ for t = 1:T
     polygons_list = getWeatherPolygons(S, t); 
 
     num_poly = length(polygons_list); % Number of polygons
-    weather_polygons{t,1} = num_poly;
+    %weather_polygons{t,1} = num_poly;
     
     if num_poly>0
         for i = 1:num_poly
@@ -37,7 +37,10 @@ for t = 1:T
             lat = lat_lon(1:2:end);
             lon = lat_lon(2:2:end);
 
-            weather_polygons{t,i+1} = polyshape(lon, lat);
+            hazard.pgon = polyshape(lon, lat);
+            hazard.CTH = 1000000;
+
+            weather_polygons{t,1}{i} = hazard;
         end
     end
 end
