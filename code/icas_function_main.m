@@ -62,18 +62,17 @@ function ASCR = icas_function_main()
     k_vec_aux = 1:nk;
 
     for k = 1 % For one ACC (EDUUUTAS)
-    
-        sectors_t = 2; % initialize variable sectors_t
-    
+        
         ASCR{k} = nan(nT, nM);
 
-        %for t = 1:nT % For each time
-        for t = 1 % Only for the first time (15:00)
+        for t = 1:nT % For each time
+        %for t = 1 % Only for the first time (15:00)
 
-            % TODO: fix altitude
-            main_acc = main_ACC{t,1};
-            adjacent_accs = adjacent_ACCs(t,1,:);
-    
+            fprintf("Calculate ASCR for time %d", 1);
+
+            main_acc = main_ACC(t,:);
+            adjacent_accs = squeeze(adjacent_ACCs(t,:,:));
+
             [sector_ab, a_band, flows_j] = icas_function_flows_sector_k(...
                 main_acc, adjacent_accs);
             [p_in, p_out, AC_in] = icas_function_p_in_out(AC, sector_ab, a_band);

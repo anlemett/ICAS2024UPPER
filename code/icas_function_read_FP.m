@@ -35,8 +35,7 @@ AC(na) = struct;
 
 for ia = 1:na
 
-    disp(na)
-    disp(ia)
+    fprintf("Reading %d flight plans, flight plan: %d", na, ia);
 
     callsign = callsigns_list{ia};
 

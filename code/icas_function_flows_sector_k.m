@@ -1,25 +1,10 @@
-function [sector_ab, a_band, flows_j] = icas_function_flows_sector_k(main_sector, adjacent_sectors)
+function [sector_ab, a_band, flows_j] = icas_function_flows_sector_k(main_acc, adjacent_accs)
 
 nSec = 1; % Number of main sectors
 nAdj = 4; % Number of adjacent sectors
 
-nk = 1; % Number of subsectors in main sector
-
-% Find sector j lowest and upper altitude
-low_lim = inf;
-upp_lim = 0;
-
-for i = 1:nk
-    low_lim_aux = main_sector.properties.LOWER_LIMIT_VALUE;
-    upp_lim_aux = main_sector.properties.UPPER_LIMIT_VALUE;
-    
-    low_lim = min(low_lim, low_lim_aux);
-    upp_lim = max(upp_lim, upp_lim_aux);
-end
-
 % Altitude bands within the sector
-a_band = 315:10:10000; a_band = a_band';
-a_band = a_band((a_band>=low_lim)&(a_band<=upp_lim));
+a_band = 315:10:1000; a_band = a_band';
 [nab, ~] = size(a_band); % number of altitude bands
 
 % Polygons, triplets and edges at different altitude bands
@@ -27,6 +12,10 @@ sector_ab = cell(nab, 1);
 flows_j = cell(nab, 1);
 
 for i = 1:nab
+
+    % Get main and adjacent ACCs for the current altitude
+    [main_sector, adjacent_sectors] = get_sectors_at_altitude( ...
+        main_acc, adjacent_accs, a_band(i));
     
     [sectors_pgon, adj_pgon] = icas_function_sector_adjacent_pgon_a_band(main_sector,...
         adjacent_sectors, a_band(i));
@@ -34,6 +23,7 @@ for i = 1:nab
     sector_ab{i} = sectors_pgon{1};
     
     %edge_data = zeros(length(sectors_pgon{k}.Vertices(:,1)), nSec+nAdj);
+
     edge_data = zeros(length(sectors_pgon{1}.Vertices(:,1)), nSec+nAdj);
     
     % Find edges between adjacent sectors in that altitude band (the edges may
@@ -149,3 +139,17 @@ end
 
 end
 
+function [main_sector, adjacent_sectors] = get_sectors_at_altitude( ...
+    main_acc, adjacent_accs, a_band_i)
+    
+flight_levels = [315 325 345 355 365 375 10000];
+num_FL = length(flight_levels);
+
+for i=1:num_FL-1
+    if (a_band_i>=flight_levels(i)) && (a_band_i<flight_levels(i+1))
+        main_sector = main_acc{i}; % struct
+        adjacent_sectors = adjacent_accs(i,:); % 1x4 cell array containing structs
+    end
+end
+
+end

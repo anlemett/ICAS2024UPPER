@@ -1,4 +1,5 @@
-function [sectors_pgon, adjacent_pgon] = function_sector_adjacent_pgon_a_band(sector_data, adjacent_sectors_data, altitude_band)
+function [sectors_pgon, adjacent_pgon] = icas_function_sector_adjacent_pgon_a_band( ...
+    sector_data, adjacent_sectors_data, altitude_band)
 
 % Altitude band: FL
 
