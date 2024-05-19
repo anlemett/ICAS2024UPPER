@@ -66,9 +66,9 @@ function ASCR = icas_function_main()
         ASCR{k} = nan(nT, nM);
 
         % For each time
-        %time_start = 1; time_end = nT;
+        time_start = 1; time_end = nT;
         % Only for the first time (15:00)
-        time_start = 1; time_end = 1;
+        %time_start = 1; time_end = 1;
         % Only for the 7th time (16:30)
         %time_start = 7; time_end = 7;
 

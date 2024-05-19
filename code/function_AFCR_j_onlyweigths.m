@@ -36,7 +36,11 @@ for i = vec_ab'
 
 
             if h==315 % draw only for one altitude
-                function_Wmincut_draw(t, sector_ab{i}, flows_j{i}(j1).T, flows_j{i}(j1).B, w_poly);
+                flow_triplet = string(flows_j{i}(j1).triplet);
+                strArray = arrayfun(@num2str, flow_triplet, 'UniformOutput', false);
+                flow_triplet_str = strjoin(strArray, '');
+                function_Wmincut_draw(t, flow_triplet_str, sector_ab{i}, ...
+                    flows_j{i}(j1).T, flows_j{i}(j1).B, w_poly);
             end
 %             Omincut = function_Omincut(sector_ab{i}, flows_j{i}(j1).T, flows_j{i}(j1).B); % Mincut at altitude band i without weather areas
             Omincut = flows_j{i}(j1).Omincut;

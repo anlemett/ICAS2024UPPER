@@ -1,5 +1,7 @@
 
-function Wmincut = function_Wmincut_draw(t, sector_pgon, T, B, weather_polygons)
+function Wmincut = function_Wmincut_draw(t, flow_triplet_str, sector_pgon, T, B, weather_polygons)
+
+global nowcast
 
 disp("function_Wmincut_draw")
 % Wmincut = zeros(size(weather_polygons));
@@ -74,10 +76,25 @@ sector_pgon_xy = polyshape(sector_x, sector_y);
             if isempty(polyxpoly(T_x, T_y, x, y))
                 [weights((sg==1)&(tg==(i+1))), x1, x2] = boundary_to_boundary_fun(T_x, T_y, x, y); % T
                 %plot([x1(1), x2(1)], [x1(2), x2(2)],'b--')
+                if ~nowcast
+                    % 13.5 NM = 25002 meters
+                    weights((sg==1)&(tg==(i+1))) = weights((sg==1)&(tg==(i+1))) - 25002;
+                    if weights((sg==1)&(tg==(i+1))) < 0
+                        weights((sg==1)&(tg==(i+1))) = 0;
+                    end
+                end
             end
             if isempty(polyxpoly(B_x, B_y, x, y))
                 [weights((sg==(i+1))&(tg==NG)), x1, x2] = boundary_to_boundary_fun(B_x, B_y, x, y); % B
                 %plot([x1(1), x2(1)], [x1(2), x2(2)], 'b--')
+                if ~nowcast
+                    % 13.5 NM = 25002 meters
+                    weights((sg==(i+1))&(tg==NG)) = weights((sg==(i+1))&(tg==NG)) - 25002;
+                    if weights((sg==(i+1))&(tg==NG)) < 0
+                        weights((sg==(i+1))&(tg==NG)) = 0;
+                    end
+                end
+
             end
             
             % for each weather cell
@@ -88,6 +105,14 @@ sector_pgon_xy = polyshape(sector_x, sector_y);
                 
                 [weights((sg==(i+1))&(tg==(j+1))), x1, x2] = boundary_to_boundary_fun(x2, y2, x, y);
                 %plot([x1(1), x2(1)], [x1(2), x2(2)],'b:')
+
+                if ~nowcast
+                    % 27 NM = 50004 meters
+                    weights((sg==(i+1))&(tg==(j+1))) = weights((sg==(i+1))&(tg==(j+1))) - 50004;
+                    if weights((sg==(i+1))&(tg==(j+1))) < 0
+                        weights((sg==(i+1))&(tg==(j+1))) = 0;
+                    end
+                end
                 
             end
             
@@ -103,12 +128,35 @@ sector_pgon_xy = polyshape(sector_x, sector_y);
 
         if length(short_path)>2
             figure
-            H = plot(G,'EdgeLabel',G.Edges.Weight,'Layout','layered');
-            highlight(H,short_path,'EdgeColor','r')
+            fig = plot(G,'EdgeLabel',G.Edges.Weight,'Layout','layered');
+            highlight(fig,short_path,'EdgeColor','r')
 
-            title(string(t));
+            times = {'15_00', '15_15', '15_30', '15_45', '16_00', '16_15', '16_30', '16_45',...
+                     '17_00', '17_15', '17_30'};
+            FL_start = 315; FL_end = 325;
 
-            icas_function_plot_mincut(t, short_path, sector_pgon, T, B, weather_polygons);
+            filename = strcat("Time_", times{t});
+            filename = strcat(filename, "_");
+            filename = strcat(filename, times{t+1});
+            filename = strcat(filename, "_FL_");
+            filename = strcat(filename, string(FL_start));
+            filename = strcat(filename, "_");
+            filename = strcat(filename, string(FL_end));
+            filename = strcat(filename, "_flow");
+            filename = strcat(filename, flow_triplet_str);
+            filename = strcat(filename, "_graph");
+
+            if nowcast
+                full_filename = fullfile('.', 'figures', 'mincut_without_margins', filename);
+            else
+                full_filename = fullfile('.', 'figures', 'mincut_with_margins', filename);
+            end
+
+            saveas(fig, full_filename, 'png');
+            clf(fig);
+
+            icas_function_plot_mincut(t, flow_triplet_str, short_path, sector_pgon, ...
+                T, B, weather_polygons);
         end
 % %     end
 % end
@@ -241,20 +289,25 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function icas_function_plot_mincut(t, short_path, sector_pgon, T, B, weather_polygons)
+function icas_function_plot_mincut(t, flow_triplet_str, short_path, sector_pgon, ...
+    T, B, weather_polygons)
+
+global nowcast
 
 disp("icas_function_plot_mincut")
 [lon_c, lat_c] = centroid(sector_pgon);
-[sector_y, sector_x] = function_spherical_to_eq_azimuth(sector_pgon.Vertices(:,2), sector_pgon.Vertices(:,1), lat_c, lon_c);
+[sector_y, sector_x] = function_spherical_to_eq_azimuth(sector_pgon.Vertices(:,2), ...
+    sector_pgon.Vertices(:,1), lat_c, lon_c);
 sector_pgon_xy = polyshape(sector_x, sector_y);
 
 [T_y, T_x] = function_spherical_to_eq_azimuth(T(:,2), T(:,1), lat_c, lon_c);
 [B_y, B_x] = function_spherical_to_eq_azimuth(B(:,2), B(:,1), lat_c, lon_c);
 
 figure, hold on
-plot(sector_pgon_xy)
-plot(B_x, B_y, 'Linewidth', 2, 'Color', 'r', 'Marker', 'x')
-plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
+
+fig = plot(sector_pgon_xy)
+fig = plot(B_x, B_y, 'Linewidth', 2, 'Color', 'r', 'Marker', 'x')
+fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
 
 % name_alph = 'a':'z';
 
@@ -279,8 +332,14 @@ plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
                 [y, x] = function_spherical_to_eq_azimuth(w_vertices(:,2), w_vertices(:,1), lat_c, lon_c);
                 w_pgon_xy = polyshape(x,y);
                 polyout = intersect(sector_pgon_xy, w_pgon_xy);
-                plot(polyout, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.2)
-                
+                fig = plot(polyout, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.2)
+
+                if ~nowcast
+                    margin = 25002; % 25002 meters = 13.5 NM
+                    enlargedPoly = polybuffer(polyout, margin);
+                    fig = plot(enlargedPoly, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.4);
+                end
+
                 x_w{count} = polyout.Vertices(:,1);
                 y_w{count} = polyout.Vertices(:,2);
             end
@@ -299,7 +358,7 @@ plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
         weights = zeros(size(sg));
         
         [weights(NG-1), x1, x2] = boundary_to_boundary_fun(B_x, B_y, T_x, T_y);
-        plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:')
+        fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:')
 
         for i = 1:NW
             
@@ -309,15 +368,31 @@ plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
             if isempty(polyxpoly(T_x, T_y, x, y))
                 [weights((sg==1)&(tg==(i+1))), x1, x2] = boundary_to_boundary_fun(T_x, T_y, x, y); % T
 
-                if any(short_path == i+1)
-                    plot([x1(1), x2(1)], [x1(2), x2(2)],'b--')
+                if ~nowcast
+                    % 13.5 NM = 25002 meters
+                    weights((sg==1)&(tg==(i+1))) = weights((sg==1)&(tg==(i+1))) - 25002;
+                    if weights((sg==1)&(tg==(i+1))) < 0
+                        weights((sg==1)&(tg==(i+1))) = 0;
+                    end
+                end
+
+                if short_path(2) == i+1
+                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)],'b--')
                 end
             end
             if isempty(polyxpoly(B_x, B_y, x, y))
                 [weights((sg==(i+1))&(tg==NG)), x1, x2] = boundary_to_boundary_fun(B_x, B_y, x, y); % B
 
-                if any(short_path == i+1)
-                    plot([x1(1), x2(1)], [x1(2), x2(2)], 'b--')
+                if ~nowcast
+                    % 13.5 NM = 25002 meters
+                    weights((sg==(i+1))&(tg==NG)) = weights((sg==(i+1))&(tg==NG)) - 25002;
+                    if weights((sg==(i+1))&(tg==NG)) < 0
+                        weights((sg==(i+1))&(tg==NG)) = 0;
+                    end
+                end
+
+                if short_path(length(short_path)-1) == i+1
+                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b--')
                 end
             end
             
@@ -329,21 +404,60 @@ plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
                 
                 [weights((sg==(i+1))&(tg==(j+1))), x1, x2] = boundary_to_boundary_fun(x2, y2, x, y);
 
+                if ~nowcast
+                    % 27 NM = 50004 meters
+                    weights((sg==(i+1))&(tg==(j+1))) = weights((sg==(i+1))&(tg==(j+1))) - 50004;
+                    if weights((sg==(i+1))&(tg==(j+1))) < 0
+                        weights((sg==(i+1))&(tg==(j+1))) = 0;
+                    end
+                end
+
+
                 edge_in_short_parth = false;
                 pos1 = find(short_path == i+1);
                 if ~isempty(pos1)
                     if short_path(pos1+1)==j+1
-                        edge_in_short_parth = true
+                        edge_in_short_parth = true;
                     end
                 end
 
                 if edge_in_short_parth
-                    plot([x1(1), x2(1)], [x1(2), x2(2)],'b--')
+                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)],'b--')
                 end
                 
             end
             
         end
-title(string(t));
+
+ax = gca; % Get current axes
+ax.XTick = []; % Remove x-axis ticks
+ax.YTick = []; % Remove y-axis ticks
+
+ax.Box = 'off'; % Remove the box outline
+ax.XLabel = []; ax.YLabel = []; % Remove the axis labels
+
+times = {'15_00', '15_15', '15_30', '15_45', '16_00', '16_15', '16_30', '16_45',...
+         '17_00', '17_15', '17_30'};
+FL_start = 315; FL_end = 325;
+
+filename = strcat("Time_", times{t});
+filename = strcat(filename, "_");
+filename = strcat(filename, times{t+1});
+filename = strcat(filename, "_FL_");
+filename = strcat(filename, string(FL_start));
+filename = strcat(filename, "_");
+filename = strcat(filename, string(FL_end));
+filename = strcat(filename, "_flow");
+filename = strcat(filename, flow_triplet_str);
+
+if nowcast
+    full_filename = fullfile('.', 'figures', 'mincut_without_margins', filename);
+else
+    full_filename = fullfile('.', 'figures', 'mincut_with_margins', filename);
+end
+
+saveas(fig, full_filename, 'png');
+clf(fig);
+
 disp("icas_function_plot_mincut end")
 end
