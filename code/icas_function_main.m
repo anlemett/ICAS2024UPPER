@@ -65,10 +65,16 @@ function ASCR = icas_function_main()
         
         ASCR{k} = nan(nT, nM);
 
-        for t = 1:nT % For each time
-        %for t = 1 % Only for the first time (15:00)
+        % For each time
+        %time_start = 1; time_end = nT;
+        % Only for the first time (15:00)
+        time_start = 1; time_end = 1;
+        % Only for the 7th time (16:30)
+        %time_start = 7; time_end = 7;
 
-            fprintf("Calculate ASCR for time %d", 1);
+        for t = time_start:time_end
+
+            fprintf("Calculate ASCR for time %d\n", t);
 
             main_acc = main_ACC(t,:);
             adjacent_accs = squeeze(adjacent_ACCs(t,:,:));
@@ -77,7 +83,7 @@ function ASCR = icas_function_main()
                 main_acc, adjacent_accs);
             [p_in, p_out, AC_in] = icas_function_p_in_out(AC, sector_ab, a_band);
         
-            if t == 1 % initialie Wij_m
+            if t == time_start % initialie Wij_m
                 Wij_m1 = function_Wij_ini(flows_j);
             end
         
@@ -88,7 +94,7 @@ function ASCR = icas_function_main()
             end
         
             weather_polygons_t = weather_polygons{t,:};
-            ASCR_k = function_ASCR_k(sector_ab, flows_j, weather_polygons_t, Wij, a_band);
+            ASCR_k = function_ASCR_k(t, sector_ab, flows_j, weather_polygons_t, Wij, a_band);
             ASCR{k}(t) = ASCR_k;
         
             Wij_m1 = Wij;

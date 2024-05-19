@@ -1,5 +1,6 @@
 function [p_in, p_out, AC_in] = icas_function_p_in_out(AC, sector_ab_k, a_band)
 
+disp("icas_function_p_in_out")
 % This function computes the entry (p_in) and exit (p_out) points of the
 % aircraft trajectories described by the flight plans (AC) in the
 % sector (sector_ab_k)
@@ -60,6 +61,7 @@ for a  = 1:Nac
 
 end
 
+disp("icas_function_p_in_out end")
 end
 
 function [sector_div, a_band_div] = function_divide_sector(sector_ab, a_band)

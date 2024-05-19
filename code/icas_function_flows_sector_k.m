@@ -1,5 +1,6 @@
 function [sector_ab, a_band, flows_j] = icas_function_flows_sector_k(main_acc, adjacent_accs)
 
+disp("icas_function_flows_sector_k")
 nSec = 1; % Number of main sectors
 nAdj = 4; % Number of adjacent sectors
 
@@ -77,7 +78,7 @@ for i = 1:nab
     end
 
 end
-
+disp("icas_function_flows_sector_k end")
 end
 
 function edge = create_edge_fun(sector, index)

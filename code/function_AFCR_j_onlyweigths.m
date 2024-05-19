@@ -1,5 +1,6 @@
-function AFCR_i = function_AFCR_j_onlyweigths(weather_polygons, sector_ab, flows_j, Wij, a_band)
+function AFCR_i = function_AFCR_j_onlyweigths(t, weather_polygons, sector_ab, flows_j, Wij, a_band)
 
+disp("function_AFCR_j_onlyweigths")
 % [sector_ab, a_band, flows_j] = function_flows_sector_j(k, main_sectors, adjacent_sectors);
 
 % All flows j in sector k:
@@ -19,9 +20,6 @@ for i = vec_ab'
     trip_j = vertcat(flows_j{i}.triplet);
     
     if numel(weather_polygons)>0
-        temp = weather_polygons{:};
-        temp2 = [temp];
-        temp3 = temp2.pgon;
         
         aux = [weather_polygons{:}];
         w_poly = vertcat(aux.pgon);
@@ -36,7 +34,10 @@ for i = vec_ab'
 
             Wmincut = function_Wmincut(sector_ab{i}, flows_j{i}(j1).T, flows_j{i}(j1).B, w_poly); % Mincut at altitude band i with weather areas
 
-            function_Wmincut_draw(sector_ab{i}, flows_j{i}(j1).T, flows_j{i}(j1).B, w_poly);
+
+            if h==315 % draw only for one altitude
+                function_Wmincut_draw(t, sector_ab{i}, flows_j{i}(j1).T, flows_j{i}(j1).B, w_poly);
+            end
 %             Omincut = function_Omincut(sector_ab{i}, flows_j{i}(j1).T, flows_j{i}(j1).B); % Mincut at altitude band i without weather areas
             Omincut = flows_j{i}(j1).Omincut;
             
@@ -48,5 +49,5 @@ for i = vec_ab'
         end
     end
 end
-
+disp("function_AFCR_j_onlyweigths end")
 end
