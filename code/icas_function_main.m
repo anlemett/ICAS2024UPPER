@@ -39,9 +39,8 @@ function ASCR = icas_function_main()
 
     % Load the main sector (ACC) and adjacent sectors (ACCs)
 
-    main_ACC = icas_function_create_main_acc();
+    [main_ACC, adjacent_ACCs] = icas_function_get_accs();
 
-    adjacent_ACCs = icas_function_create_adjacent_accs;
 
     %% Read  weather data
 

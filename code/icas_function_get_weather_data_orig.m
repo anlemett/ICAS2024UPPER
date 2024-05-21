@@ -6,7 +6,7 @@
 % Read weather data and store it as polygons
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function weather_polygons = icas_function_get_weather_data()
+function weather_polygons = icas_function_get_weather_data_orig()
 
 T = 10; % Number of weather time intervals from 15.00 to 17.30 (15 minutes intervals)
 
@@ -14,10 +14,8 @@ times = {'1456', '1511', '1526', '1541', '1556', '1611', '1626', '1641', '1656',
 
 weather_polygons = cell(T, 1);
 
-enlarged_orig_polygons = cell(T, 1);
-
 for t = 1:T
-
+    
     day = 'DLR_WCB_T_EUR_20230608';
     daytime = strcat(day, times{t});
     filename = strcat(daytime, '.xml');
@@ -39,48 +37,11 @@ for t = 1:T
             lat = lat_lon(1:2:end);
             lon = lat_lon(2:2:end);
 
-            pgon_orig = polyshape(lon, lat);
+            hazard.pgon = polyshape(lon, lat);
+            hazard.CTH = 1000000;
 
-            buffer_distance_nm = 13.5; % NM
-            buffer_distance_deg = buffer_distance_nm / 60; % degrees (approximation)
-            
-            lon = pgon_orig.Vertices(:, 1);
-            lat = pgon_orig.Vertices(:, 2);
-
-            [lat_buff, lon_buff] = bufferm(lat, lon, buffer_distance_deg);
-
-            enlargedPoly = polyshape(lon_buff, lat_buff);
-
-            enlarged_orig_polygons{t,1}{i} = enlargedPoly;
+            weather_polygons{t,1}{i} = hazard;
         end
-    end
-end
-
-% Unite obstacles which have intersection
-
-for t = 1:T
-
-    polyshapes = enlarged_orig_polygons{t,1};
-
-    polyvec = [];
-
-    % Loop all shapes and combine into polyshape vector
-
-    for ii = 1:length(polyshapes)
-
-        poly = polyshapes{ii};
-        polyvec = [polyvec; poly];
-
-    end
-
-    polyout = union(polyvec);
-    unitedPolyshapes = regions(polyout);
-
-    weather_polygons{t,1} = cell(length(unitedPolyshapes),1);
-    for i2 = 1:length(unitedPolyshapes)
-        hazard.pgon = unitedPolyshapes(i2);
-        hazard.CTH = 1000000;
-        weather_polygons{t,1}{i2,1} = hazard;
     end
 end
 

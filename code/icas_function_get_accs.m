@@ -1,4 +1,4 @@
-function adjacent_sectors_data = icas_function_create_adjacent_sectors
+function [main_acc_data, adjacent_sectors_data] = icas_function_get_accs
 
 % Create variable with adjacent sector data
 
@@ -14,25 +14,41 @@ function adjacent_sectors_data = icas_function_create_adjacent_sectors
 % LOWER_LIMIT_VALUE
 % geometry: 1x1 structure with field coordinates
 
-% N = 3
-nT = 10;
-num_a_bands = 6;
-N = 4;
-adjacent_sectors_data = cell(nT, num_a_bands, N); % Initialize output variable
+nT = 10; % number of time intervals
+N = 7; % number of adjacent ACCs
+
+flight_levels = [315 325 335 345 355 365 375 385 999];
+
+num_FL = numel(flight_levels);
+num_FL_bands = num_FL - 1;
+
+% Initialize output variables
+main_acc_data = cell(nT, num_FL_bands, 1); 
+adjacent_sectors_data = cell(nT, num_FL_bands, N); 
 
 % Airspace configuration
 upper_sector_filename = fullfile('.', 'code_input', 'airspace_data', 'Upper_airspace', ...
-    'fir_EDUU_2023-06-08.json');
+    'fir_nextto_EDMMCTAA_upper_2023-06-08.json');
 
 upper_sector = jsondecode(fileread(upper_sector_filename));
 
 % For each time, find sector configuration in table 'configuration_upper_20230608_1500_1730.xlsx'
 
-T = readtable(fullfile('.', 'code_input', 'airspace_data',...
+full_filename = fullfile('.', 'code_input', 'airspace_data',...
         'Upper_airspace',...
-        'configuration_upper_20230608_1500_1730.xlsx'), ...
-        'FileType', 'spreadsheet', 'ReadVariableNames', true); % Read xlsx file
-  
+        'configuration_upper_20230608_1500_1730.xlsx');
+
+% Create import options for the Excel file
+opts = detectImportOptions(full_filename);
+
+opts.VariableNamingRule = 'preserve'; % Preserve the original variable names
+
+% Set the import options to read all columns as text (string)
+opts = setvartype(opts, 'string');
+
+T = readtable(full_filename, opts);
+
+
 nT = 10; % number of time intervals
 
 config_vec = cell(1, nT);
@@ -45,14 +61,10 @@ acc_names = fieldnames(acc_struct_arr);
 
 num_ACC = numel(acc_names);
 
-flight_levels = [315 325 345 355 365 375 999];
-% 315   345   365   999 for ACC EDUUUTAS conf. S6H
-num_FL = numel(flight_levels);
-num_a_bands = num_FL - 1;
 
-main_airspace_pgons = cell(nT, num_a_bands, 1); 
+main_airspace_pgons = cell(nT, num_FL_bands, 1); 
 
-adjacent_airspace_pgons = cell(nT, num_a_bands, num_ACC-1); 
+adjacent_airspace_pgons = cell(nT, num_FL_bands, N); 
 
 % 10 time intervals, 6 altitude bands, 4 ACCs
 
@@ -60,14 +72,15 @@ adjacent_airspace_pgons = cell(nT, num_a_bands, num_ACC-1);
 for t = 1:nT
 
     % Iterate through altitude bands
-    for h = 1:num_a_bands
+    for h = 1:num_FL_bands
 
         FL_start = flight_levels(h);
         FL_end = flight_levels(h+1);
 
         adj_num = 1;
       
-        % Iterate through ACCs
+        % Iterate through all ACCs
+
         for a = 1:num_ACC
     
             acc = acc_names{a};
@@ -138,6 +151,16 @@ for t = 1:nT
 
             if strcmp(acc, 'EDUUUTAS')
                 main_airspace_pgons{t, h, 1} = acc_pgon;
+
+                main_acc_data{t, h, 1}(1,1) = struct('properties',[], 'geometry', []);
+
+                main_acc_data{t,h,1}(1).properties.DESIGNATOR = acc;
+                main_acc_data{t,h,1}(1).properties.LOWER_LIMIT_VALUE = flight_levels(h);
+                main_acc_data{t,h,1}(1).properties.UPPER_LIMIT_VALUE = flight_levels(h+1);
+
+                main_acc_data{t,h,1}(1).geometry.coordinates = zeros(1,length(acc_pgon.Vertices),2);
+                main_acc_data{t,h,1}(1).geometry.coordinates(:,:,1) = acc_pgon.Vertices(:,1)';
+                main_acc_data{t,h,1}(1).geometry.coordinates(:,:,2) = acc_pgon.Vertices(:,2)';
             
             else
 
@@ -156,41 +179,17 @@ for t = 1:nT
                 adj_num = adj_num +1;
             end
         end % ACCs
+
+        % From EDUUUTAS remove intersection with LOVV1CTA
+        acc_pgon = main_airspace_pgons{t, h, 1};
+        acc_pgon = subtract(acc_pgon, adjacent_airspace_pgons{t, h, 5});
+        main_airspace_pgons{t, h, 1} = acc_pgon;
+        % From LOVVCTA remove intersection with LOVV1CTA
+        acc_pgon = adjacent_airspace_pgons{t, h, 6};
+        acc_pgon = subtract(acc_pgon, adjacent_airspace_pgons{t, h, 5});
+        adjacent_airspace_pgons{t, h, 6} = acc_pgon;
     end % altitude bands
 end % time intervals
 
-% Create dummy ACC for all times and altitudes
-for t = 1:nT
-
-    % Iterate through altitude bands
-    for h = 1:num_a_bands
-
-        FL_start = flight_levels(h);
-        FL_end = flight_levels(h+1);
-
-        main_acc = main_airspace_pgons{t, h, 1};
-        acc1 = adjacent_airspace_pgons{t, h, 1};
-        acc2 = adjacent_airspace_pgons{t, h, 2};
-        acc3 = adjacent_airspace_pgons{t, h, 3};
-
-        together = union(main_acc,acc1);
-        together = union(together,acc2);
-        together = union(together,acc3);
-
-        dummy_pgon = polyshape([6 16 16],[46 46 55]);
-        dummy_pgon = subtract(dummy_pgon, together);
-
-        adjacent_sectors_data{t, h, 4}(1,1) = struct('properties',[], 'geometry', []);
-
-        adjacent_sectors_data{t,h,4}(1).properties.DESIGNATOR = "Dummy";
-        adjacent_sectors_data{t,h,4}(1).properties.LOWER_LIMIT_VALUE = flight_levels(h);
-        adjacent_sectors_data{t,h,4}(1).properties.UPPER_LIMIT_VALUE = flight_levels(h+1);
-
-        adjacent_sectors_data{t,h,4}(1).geometry.coordinates = zeros(1,length(dummy_pgon.Vertices),2);
-        adjacent_sectors_data{t,h,4}(1).geometry.coordinates(:,:,1) = dummy_pgon.Vertices(:,1)';
-        adjacent_sectors_data{t,h,4}(1).geometry.coordinates(:,:,2) = dummy_pgon.Vertices(:,2)';
-
-    end
-end
 
 end % function

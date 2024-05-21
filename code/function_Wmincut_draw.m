@@ -122,10 +122,6 @@ sector_pgon_xy = polyshape(sector_x, sector_y);
         [short_path, Wmincut] = shortestpath(G, 1, NG); % Compute shortest path
         
         
-        %figure
-        %H = plot(G,'EdgeLabel',G.Edges.Weight,'Layout','layered');
-        %highlight(H,short_path,'EdgeColor','r')
-
         if length(short_path)>2
             figure
             fig = plot(G,'EdgeLabel',G.Edges.Weight,'Layout','layered');
@@ -146,11 +142,7 @@ sector_pgon_xy = polyshape(sector_x, sector_y);
             filename = strcat(filename, flow_triplet_str);
             filename = strcat(filename, "_graph");
 
-            if nowcast
-                full_filename = fullfile('.', 'figures', 'mincut_without_margins', filename);
-            else
-                full_filename = fullfile('.', 'figures', 'mincut_with_margins', filename);
-            end
+            full_filename = fullfile('.', 'figures', 'mincut_with_margins', filename);
 
             saveas(fig, full_filename, 'png');
             clf(fig);
@@ -332,12 +324,12 @@ fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
                 [y, x] = function_spherical_to_eq_azimuth(w_vertices(:,2), w_vertices(:,1), lat_c, lon_c);
                 w_pgon_xy = polyshape(x,y);
                 polyout = intersect(sector_pgon_xy, w_pgon_xy);
-                fig = plot(polyout, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.2)
+                fig = plot(polyout, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.4)
 
                 if ~nowcast
                     margin = 25002; % 25002 meters = 13.5 NM
                     enlargedPoly = polybuffer(polyout, margin);
-                    fig = plot(enlargedPoly, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.4);
+                    fig = plot(enlargedPoly, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.3);
                 end
 
                 x_w{count} = polyout.Vertices(:,1);
@@ -358,7 +350,8 @@ fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
         weights = zeros(size(sg));
         
         [weights(NG-1), x1, x2] = boundary_to_boundary_fun(B_x, B_y, T_x, T_y);
-        fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:')
+        %fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:')
+        fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'color',[0 0.5 0],'linestyle',':', 'Linewidth', 2)
 
         for i = 1:NW
             
@@ -377,7 +370,7 @@ fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
                 end
 
                 if short_path(2) == i+1
-                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)],'b--')
+                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
                 end
             end
             if isempty(polyxpoly(B_x, B_y, x, y))
@@ -392,7 +385,7 @@ fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
                 end
 
                 if short_path(length(short_path)-1) == i+1
-                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b--')
+                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:', 'Linewidth', 2)
                 end
             end
             
@@ -416,13 +409,13 @@ fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
                 edge_in_short_parth = false;
                 pos1 = find(short_path == i+1);
                 if ~isempty(pos1)
-                    if short_path(pos1+1)==j+1
+                    if (short_path(pos1+1)==j+1) || (short_path(pos1-1)==j+1)
                         edge_in_short_parth = true;
                     end
                 end
 
                 if edge_in_short_parth
-                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)],'b--')
+                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
                 end
                 
             end
@@ -450,11 +443,7 @@ filename = strcat(filename, string(FL_end));
 filename = strcat(filename, "_flow");
 filename = strcat(filename, flow_triplet_str);
 
-if nowcast
-    full_filename = fullfile('.', 'figures', 'mincut_without_margins', filename);
-else
-    full_filename = fullfile('.', 'figures', 'mincut_with_margins', filename);
-end
+full_filename = fullfile('.', 'figures', 'mincut_with_margins', filename);
 
 saveas(fig, full_filename, 'png');
 clf(fig);

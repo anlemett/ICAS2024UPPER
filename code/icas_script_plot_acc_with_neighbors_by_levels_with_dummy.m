@@ -32,8 +32,8 @@ acc_names = fieldnames(acc_struct_arr);
 
 num_ACC = numel(acc_names);
 
-flight_levels = [315 325 345 355 365 375 999];
-% 315   345   365   999 for ACC EDUUUTAS conf. S6H
+flight_levels = [315 325 335 345 355 365 375 385 999];
+
 num_FL = numel(flight_levels);
 num_a_bands = num_FL - 1;
 

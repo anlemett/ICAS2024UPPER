@@ -3,7 +3,7 @@
 % Anastasia Lemetti
 % MATLAB version: MATLAB R2024a
 % 
-% plot ACC EDUUUTAS and its neighbours inside the MUC FIR on all flight levels
+% plot ACC EDUUUTAS and its neighbours inside the MUC FIR for all flight levels
 % for day 2023-06-08, for time from 15.00 to 17.30
 % together with weather obstacles
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -15,12 +15,12 @@ warning('off');
 
 % Read weather data
 
+weather_polygons_orig = icas_function_get_weather_data_orig();
 weather_polygons = icas_function_get_weather_data();
-
 
 % Airspace configuration
 upper_sector_filename = fullfile('.', 'code_input', 'airspace_data', 'Upper_airspace', ...
-    'fir_EDUU_2023-06-08.json');
+    'fir_nextto_EDMMCTAA_upper_2023-06-08.json');
 
 upper_sector = jsondecode(fileread(upper_sector_filename));
 
@@ -43,19 +43,18 @@ acc_names = fieldnames(acc_struct_arr);
 
 num_ACC = numel(acc_names);
 
-flight_levels = [315 325 345 355 365 375 999];
-% 315   345   365   999 for ACC EDUUUTAS conf. S6H
-num_FL = numel(flight_levels);
-num_a_bands = num_FL - 1;
+flight_levels = [315 325 335 345 355 365 375 385 999];
 
-airspace_pgons = cell(nT, num_a_bands, num_ACC); 
-% 10 time intervals, 13 altitude bands, 4 ACCs
+num_FL = numel(flight_levels);
+num_FL_bands = num_FL - 1;
+
+airspace_pgons = cell(nT, num_FL_bands, num_ACC); 
+% 10 time intervals, 8 flight level bands, 11 ACCs
 
 % Iterate through times
 for t = 1:nT
-
     % Iterate through altitude bands
-    for h = 1:num_a_bands
+    for h = 1:num_FL_bands
 
         FL_start = flight_levels(h);
         FL_end = flight_levels(h+1);
@@ -115,7 +114,7 @@ for t = 1:nT
                             airblock_pgon = polyshape(airblock_coord);
                             acc_pgon = union(acc_pgon, airblock_pgon);
                         end
-                    end % airblocke
+                    end % airblock
                 end % sectors
             end % configurations (used only one)
         
@@ -138,14 +137,16 @@ end % time intervals
 
 % Display all ACCs on all band altitudes for all time intervals
 
+nowcast = false;
+
 for t = 1:nT
-    for h=1:num_a_bands
+    for h=1:num_FL_bands
 
         figure; hold on;
         colors = lines(num_ACC);
 
         min_lon = 5;
-        max_lon = 16;
+        max_lon = 20;
         min_lat = 46;
         max_lat = 55;
 
@@ -162,7 +163,7 @@ for t = 1:nT
         
             pgon = airspace_pgons{t, h, a};
 
-            if ~isempty(pgon.Vertices)
+            if ~isempty(pgon)
 
                 fig = plot(pgon, 'FaceColor', 'none', 'EdgeColor', colors(a,:), 'linewidth', 2);
             end
@@ -170,19 +171,36 @@ for t = 1:nT
 
         % Obstacles
         
-        number_of_obstacles = weather_polygons{t,1};
+        time_obstacles = weather_polygons{t,:};
+        number_of_obstacles = length(time_obstacles);
 
-        for o = 2:number_of_obstacles+1
-            w_pgon = weather_polygons{t,o};
+        for o = 1:number_of_obstacles
+            w_pgon = time_obstacles{o};
 
             if isempty(w_pgon)
                 continue
             end
 
             % plot obstacles
-            fig = plot(w_pgon, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor',...
-                    [199, 0, 57]/255, 'FaceAlpha', 0.3);
+            fig = plot(w_pgon.pgon, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor',...
+                    [199, 0, 57]/255, 'FaceAlpha', 0.4);
         end
+
+        time_obstacles_orig = weather_polygons_orig{t,:};
+        number_of_obstacles = length(time_obstacles_orig);
+
+        for o = 1:number_of_obstacles
+            w_pgon = time_obstacles_orig{o};
+
+            if isempty(w_pgon)
+                continue
+            end
+
+            % plot obstacles
+            fig = plot(w_pgon.pgon, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57]/255, 'FaceAlpha', 0.4);
+
+        end
+
 
         legend(acc_names, 'Position', [0.0 0.0 0.2 0.4]);
 

@@ -9,8 +9,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Airspace configuration
-upper_sector_filename = fullfile('.', 'code_input', 'airspace_data', 'Upper_airspace', ...
-    'fir_EDUU_2023-06-08.json');
+upper_sector_filename = fullfile('.', 'code_input', 'airspace_data', 'Upper_airspace',...
+    'fir_nextto_EDMMCTAA_upper_2023-06-08.json');
+
+%'fir_EDUU_2023-06-08.json');
 
 upper_sector = jsondecode(fileread(upper_sector_filename));
 
@@ -21,10 +23,19 @@ acc_arr = fieldnames([upper_sector.(exp_date)]);
 
 % For each time, find sector configuration in table 'configuration_upper_20230608_1500_1730.xlsx'
 
-T = readtable(fullfile('.', 'code_input', 'airspace_data',...
+full_filename = fullfile('.', 'code_input', 'airspace_data',...
         'Upper_airspace',...
-        'configuration_upper_20230608_1500_1730.xlsx'), ...
-        'FileType', 'spreadsheet', 'ReadVariableNames', true); % Read xlsx file
+        'configuration_upper_20230608_1500_1730.xlsx');
+
+% Create import options for the Excel file
+opts = detectImportOptions(full_filename);
+
+opts.VariableNamingRule = 'preserve'; % Preserve the original variable names
+
+% Set the import options to read all columns as text (string)
+opts = setvartype(opts, 'string');
+
+T = readtable(full_filename, opts);
   
 nT = 10; % number of time intervals
 
@@ -79,6 +90,16 @@ for i = 1:numel(acc_arr)
                 airblock = airblocks.(airblocks_names{jj});
                 flight_levels{numel(flight_levels)+1} = airblock.fl(1);
                 flight_levels{numel(flight_levels)+1} = airblock.fl(2);
+
+                b_volume = airblock.volume;
+                b_altitudes = unique(b_volume(:,3));
+                if length(b_altitudes)>2
+                    disp("airblock volume altitudes number > 2")
+                end
+
+                flight_levels{numel(flight_levels)+1} = b_altitudes(1);
+                flight_levels{numel(flight_levels)+1} = b_altitudes(2);
+
                 %flight_levels_from{numel(flight_levels_from)+1} = airblock.fl(1);
                 %flight_levels_to{numel(flight_levels_to)+1} = airblock.fl(2);
             end
@@ -87,9 +108,7 @@ for i = 1:numel(acc_arr)
 end
 
 flight_levels = unique(cell2mat(flight_levels));
-disp(flight_levels); % 315   345   365   999 for ACC EDUUUTAS conf. S6H
-
-%[235 245 255 265 285 295 305 315 325 345 355 365 375 999] for all ACCs
+disp(flight_levels); 
 
 %flight_levels = unique(cell2mat(flight_levels_from));
 %disp(flight_levels);

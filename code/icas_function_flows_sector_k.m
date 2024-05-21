@@ -2,7 +2,7 @@ function [sector_ab, a_band, flows_j] = icas_function_flows_sector_k(main_acc, a
 
 disp("icas_function_flows_sector_k")
 nSec = 1; % Number of main sectors
-nAdj = 4; % Number of adjacent sectors
+nAdj = 7; % Number of adjacent sectors
 
 % Altitude bands within the sector
 a_band = 315:10:1000; a_band = a_band';
@@ -143,7 +143,7 @@ end
 function [main_sector, adjacent_sectors] = get_sectors_at_altitude( ...
     main_acc, adjacent_accs, a_band_i)
     
-flight_levels = [315 325 345 355 365 375 10000];
+flight_levels = [315 325 335 345 355 365 375 385 1000];
 num_FL = length(flight_levels);
 
 for i=1:num_FL-1
