@@ -46,7 +46,7 @@ flight_levels = [315 325 335 345 355 365 375 385 999];
 num_FL = numel(flight_levels);
 
 airspace_pgons = cell(nT, num_FL-1, num_ACC); 
-% 10 time intervals, 13 altitude bands, 4 ACCs
+% 10 time intervals, 13 flight level bands, 8 ACCs
 
 % Iterate through times
 for t = 1:nT
@@ -144,6 +144,10 @@ for t = 1:nT
         acc_pgon = airspace_pgons{t, h, 3};
         acc_pgon = subtract(acc_pgon, airspace_pgons{t, h, 7});
         airspace_pgons{t, h, 3} = acc_pgon;
+        %acc_pgon = airspace_pgons{t, h, 7};
+        %acc_pgon = subtract(acc_pgon, airspace_pgons{t, h, 3});
+        %airspace_pgons{t, h, 7} = acc_pgon;
+
         % From LOVVCTA remove intersection with LOVV1CTA
         acc_pgon = airspace_pgons{t, h, 9};
         acc_pgon = subtract(acc_pgon, airspace_pgons{t, h, 7});
@@ -210,7 +214,17 @@ for t = 1:nT
         fig_title = strcat(fig_title, string(FL_start));
         fig_title = strcat(fig_title, "-");
         fig_title = strcat(fig_title, string(FL_end));
-        title(fig_title);
+        %title(fig_title);
+
+        ax = gca; % Get current axes
+        ax.XTick = []; % Remove x-axis ticks
+        ax.YTick = []; % Remove y-axis ticks
+        box off; % Turn off the box
+        axis off; % Turn off the axis
+
+        ax.Box = 'off'; % Remove the box outline
+        ax.XLabel = []; ax.YLabel = []; % Remove the axis labels
+
 
         times = {'15_00', '15_15', '15_30', '15_45', '16_00', '16_15', '16_30', '16_45',...
             '17_00', '17_15', '17_30'};

@@ -33,6 +33,8 @@ na = length(callsigns_list);
 
 AC(na) = struct;
 
+
+max_FL = 0;
 for ia = 1:na
 
     fprintf("Reading %d flight plans, flight plan: %d\n", na, ia);
@@ -54,6 +56,10 @@ for ia = 1:na
         AC(ia).WP(i,2) = flight_data.beginLon(i);
         AC(ia).WP(i,3) = flight_data.beginLat(i);
         AC(ia).WP(i,4) = flight_data.beginFL(i);
+
+        if AC(ia).WP(i,4) > max_FL
+            max_FL = AC(ia).WP(i,4)
+        end
         
     end
 
@@ -63,6 +69,8 @@ for ia = 1:na
     %AC(ia).WP(nWP+1,2) = flight_data.endLon(nWP);
     %AC(ia).WP(nWP+1,3) = flight_data.endLat(nWP);
     %AC(ia).WP(nWP+1,4) = flight_data.endFL(nWP);
+
+    %fprintf("Maximum FL among all flights: %d\n", max_FL)
     
 end
 

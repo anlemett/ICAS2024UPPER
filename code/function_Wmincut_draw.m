@@ -298,8 +298,8 @@ sector_pgon_xy = polyshape(sector_x, sector_y);
 figure, hold on
 
 fig = plot(sector_pgon_xy)
-fig = plot(B_x, B_y, 'Linewidth', 2, 'Color', 'r', 'Marker', 'x')
-fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
+h1 = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
+h2 = plot(B_x, B_y, 'Linewidth', 2, 'Color', 'r', 'Marker', 'x')
 
 % name_alph = 'a':'z';
 
@@ -350,8 +350,8 @@ fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
         weights = zeros(size(sg));
         
         [weights(NG-1), x1, x2] = boundary_to_boundary_fun(B_x, B_y, T_x, T_y);
-        %fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:')
-        fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'color',[0 0.5 0],'linestyle',':', 'Linewidth', 2)
+        
+        h3 = plot([x1(1), x2(1)], [x1(2), x2(2)], 'color',[0 0.5 0],'linestyle',':', 'Linewidth', 2)
 
         for i = 1:NW
             
@@ -370,7 +370,7 @@ fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
                 end
 
                 if short_path(2) == i+1
-                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
+                    h4 = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
                 end
             end
             if isempty(polyxpoly(B_x, B_y, x, y))
@@ -385,7 +385,7 @@ fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
                 end
 
                 if short_path(length(short_path)-1) == i+1
-                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:', 'Linewidth', 2)
+                    h4 = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:', 'Linewidth', 2)
                 end
             end
             
@@ -415,7 +415,7 @@ fig = plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
                 end
 
                 if edge_in_short_parth
-                    fig = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
+                    h4 = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
                 end
                 
             end
@@ -426,8 +426,13 @@ ax = gca; % Get current axes
 ax.XTick = []; % Remove x-axis ticks
 ax.YTick = []; % Remove y-axis ticks
 
-ax.Box = 'off'; % Remove the box outline
+box off; % Turn off the box
+axis off; % Turn off the axis
 ax.XLabel = []; ax.YLabel = []; % Remove the axis labels
+
+% Create custom legend
+legend([h1, h2, h3, h4], {'Top', 'Bottom', 'Mincut without weather', 'Mincut with weather'},...
+    'Location', 'southeast');
 
 times = {'15_00', '15_15', '15_30', '15_45', '16_00', '16_15', '16_30', '16_45',...
          '17_00', '17_15', '17_30'};

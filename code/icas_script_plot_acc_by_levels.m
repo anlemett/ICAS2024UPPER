@@ -34,7 +34,7 @@ a_band_pgons = cell(1, num_FL-1);
 
 el_sectors = [main_conf.elementarySectors];
 
-sectors_names = fieldnames(el_sectors);
+el_sectors_names = fieldnames(el_sectors);
 
 num_sec = numel(el_sectors_names); 
 
@@ -126,7 +126,6 @@ for i1=1:num_a_bands
     plot_title = strcat(plot_title, "-");
     plot_title = strcat(plot_title, string(FL_end));
     title(plot_title);
-    axis equal;
 
     filename = strcat("EDUUUTAS_FL_", string(FL_start));
     filename = strcat(filename, "_");
