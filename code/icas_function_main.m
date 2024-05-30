@@ -45,6 +45,7 @@ function ASCR = icas_function_main()
     %% Read  weather data
 
     weather_polygons = icas_function_get_weather_data();
+    weather_polygons_orig = icas_function_get_weather_data_orig();
 
     %% Flight plans
 
@@ -93,7 +94,9 @@ function ASCR = icas_function_main()
             end
         
             weather_polygons_t = weather_polygons{t,:};
-            ASCR_k = function_ASCR_k(t, sector_ab, flows_j, weather_polygons_t, Wij, a_band);
+            weather_polygons_t_orig = weather_polygons_orig{t,:};
+            ASCR_k = function_ASCR_k(t, sector_ab, flows_j, weather_polygons_t, ...
+                weather_polygons_t_orig, Wij, a_band);
             ASCR{k}(t) = ASCR_k;
         
             Wij_m1 = Wij;

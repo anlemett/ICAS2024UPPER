@@ -137,8 +137,6 @@ end % time intervals
 
 % Display all ACCs on all band altitudes for all time intervals
 
-nowcast = false;
-
 for t = 1:nT
     for h=1:num_FL_bands
 
@@ -236,4 +234,3 @@ for t = 1:nT
         clf(fig);
     end
 end
-

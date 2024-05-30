@@ -1,7 +1,6 @@
 
-function Wmincut = function_Wmincut_draw(t, flow_triplet_str, sector_pgon, T, B, weather_polygons)
-
-global nowcast
+function Wmincut = function_Wmincut_draw(t, flow_triplet_str, sector_pgon, T, B, ...
+    weather_polygons, weather_polygons_orig)
 
 disp("function_Wmincut_draw")
 % Wmincut = zeros(size(weather_polygons));
@@ -18,140 +17,104 @@ sector_pgon_xy = polyshape(sector_x, sector_y);
 [T_y, T_x] = function_spherical_to_eq_azimuth(T(:,2), T(:,1), lat_c, lon_c);
 [B_y, B_x] = function_spherical_to_eq_azimuth(B(:,2), B(:,1), lat_c, lon_c);
 
-%figure, hold on
-%plot(sector_pgon_xy)
-%plot(B_x, B_y, 'Linewidth', 2, 'Color', 'r', 'Marker', 'x')
-%plot(T_x, T_y, 'Linewidth', 2, 'Color', 'b', 'Marker', 'o')
 
-% name_alph = 'a':'z';
-
-% for t = 1:nT
-%     for m = 1:nM
+nw = numel(weather_polygons); % number of weather polygons
         
-        nw = numel(weather_polygons); % number of weather polygons
+% Select weather cells within the sector
+count = 0;
+weather_in = [];
         
-        % Select weather cells within the sector
-        count = 0;
-        weather_in = [];
-        
-        for i = 1:nw
+for i = 1:nw
             
-            polyout = intersect(sector_pgon, weather_polygons(i));
+    polyout = intersect(sector_pgon, weather_polygons(i));
             
-            if polyout.NumRegions>0 
-                weather_in = [weather_in, i];
-                count = count+1;
+    if polyout.NumRegions>0 
+        weather_in = [weather_in, i];
+        count = count+1;
                 
-                w_vertices = weather_polygons(i).Vertices;
-                [y, x] = function_spherical_to_eq_azimuth(w_vertices(:,2), w_vertices(:,1), lat_c, lon_c);
-                w_pgon_xy = polyshape(x,y);
-                polyout = intersect(sector_pgon_xy, w_pgon_xy);
-                %plot(polyout, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.2)
+        w_vertices = weather_polygons(i).Vertices;
+        [y, x] = function_spherical_to_eq_azimuth(w_vertices(:,2), w_vertices(:,1), lat_c, lon_c);
+        w_pgon_xy = polyshape(x,y);
+        polyout = intersect(sector_pgon_xy, w_pgon_xy);
                 
-                x_w{count} = polyout.Vertices(:,1);
-                y_w{count} = polyout.Vertices(:,2);
-            end
-        end
+        x_w{count} = polyout.Vertices(:,1);
+        y_w{count} = polyout.Vertices(:,2);
+    end
+end
         
-        % Create graph
-        NW = length(weather_in); % Number of weather cells
-        NG = 2 + NW; % Number of nodes in the graph
+% Create graph
+NW = length(weather_in); % Number of weather cells
+NG = 2 + NW; % Number of nodes in the graph
         
-        % 1) nodes and edges
-%         nodenames = ['T', graph_names, 'B'];
-        nodes_comb = nchoosek(1:NG,2);
-        sg = nodes_comb(:,1)'; tg = nodes_comb(:,2)';
-        
-        % 2) weights
-        weights = zeros(size(sg));
-        
-        [weights(NG-1), x1, x2] = boundary_to_boundary_fun(B_x, B_y, T_x, T_y);
-        %plot([x1(1), x2(1)], [x1(2), x2(2)], 'b--')
+% 1) nodes and edges
+% nodenames = ['T', graph_names, 'B'];
+nodes_comb = nchoosek(1:NG,2);
+sg = nodes_comb(:,1)'; tg = nodes_comb(:,2)';
 
-        for i = 1:NW
+% 2) weights
+weights = zeros(size(sg));
+        
+[weights(NG-1), x1, x2] = boundary_to_boundary_fun(B_x, B_y, T_x, T_y);
+
+for i = 1:NW
+
+    x = x_w{i};
+    y = y_w{i};
             
-            x = x_w{i};
-            y = y_w{i};
+    if isempty(polyxpoly(T_x, T_y, x, y))
+        [weights((sg==1)&(tg==(i+1))), x1, x2] = boundary_to_boundary_fun(T_x, T_y, x, y); % T
+    end
+    if isempty(polyxpoly(B_x, B_y, x, y))
+        [weights((sg==(i+1))&(tg==NG)), x1, x2] = boundary_to_boundary_fun(B_x, B_y, x, y); % B
+    end
             
-            if isempty(polyxpoly(T_x, T_y, x, y))
-                [weights((sg==1)&(tg==(i+1))), x1, x2] = boundary_to_boundary_fun(T_x, T_y, x, y); % T
-                %plot([x1(1), x2(1)], [x1(2), x2(2)],'b--')
-                if ~nowcast
-                    % 13.5 NM = 25002 meters
-                    weights((sg==1)&(tg==(i+1))) = weights((sg==1)&(tg==(i+1))) - 25002;
-                    if weights((sg==1)&(tg==(i+1))) < 0
-                        weights((sg==1)&(tg==(i+1))) = 0;
-                    end
-                end
-            end
-            if isempty(polyxpoly(B_x, B_y, x, y))
-                [weights((sg==(i+1))&(tg==NG)), x1, x2] = boundary_to_boundary_fun(B_x, B_y, x, y); % B
-                %plot([x1(1), x2(1)], [x1(2), x2(2)], 'b--')
-                if ~nowcast
-                    % 13.5 NM = 25002 meters
-                    weights((sg==(i+1))&(tg==NG)) = weights((sg==(i+1))&(tg==NG)) - 25002;
-                    if weights((sg==(i+1))&(tg==NG)) < 0
-                        weights((sg==(i+1))&(tg==NG)) = 0;
-                    end
-                end
+    % for each weather cell
+            
+    for j = i+1:NW
+        x2 = x_w{j};
+        y2 = y_w{j};
+        
+        [weights((sg==(i+1))&(tg==(j+1))), x1, x2] = boundary_to_boundary_fun(x2, y2, x, y);
 
-            end
-            
-            % for each weather cell
-            
-            for j = i+1:NW
-                x2 = x_w{j};
-                y2 = y_w{j};
-                
-                [weights((sg==(i+1))&(tg==(j+1))), x1, x2] = boundary_to_boundary_fun(x2, y2, x, y);
-                %plot([x1(1), x2(1)], [x1(2), x2(2)],'b:')
+    end
 
-                if ~nowcast
-                    % 27 NM = 50004 meters
-                    weights((sg==(i+1))&(tg==(j+1))) = weights((sg==(i+1))&(tg==(j+1))) - 50004;
-                    if weights((sg==(i+1))&(tg==(j+1))) < 0
-                        weights((sg==(i+1))&(tg==(j+1))) = 0;
-                    end
-                end
-                
-            end
-            
-        end
+end
 
-        G = graph(sg,tg,weights); % Create graph
-        [short_path, Wmincut] = shortestpath(G, 1, NG); % Compute shortest path
+G = graph(sg,tg,weights); % Create graph
+[short_path, Wmincut] = shortestpath(G, 1, NG); % Compute shortest path
         
         
-        if length(short_path)>2
-            figure
-            fig = plot(G,'EdgeLabel',G.Edges.Weight,'Layout','layered');
-            highlight(fig,short_path,'EdgeColor','r')
+if length(short_path)>2
+    figure
+    fig = plot(G,'EdgeLabel',G.Edges.Weight,'Layout','layered');
+    highlight(fig,short_path,'EdgeColor','r')
 
-            times = {'15_00', '15_15', '15_30', '15_45', '16_00', '16_15', '16_30', '16_45',...
-                     '17_00', '17_15', '17_30'};
-            FL_start = 315; FL_end = 325;
+    box off; % Turn off the box
+    axis off; % Turn off the axis
 
-            filename = strcat("Time_", times{t});
-            filename = strcat(filename, "_");
-            filename = strcat(filename, times{t+1});
-            filename = strcat(filename, "_FL_");
-            filename = strcat(filename, string(FL_start));
-            filename = strcat(filename, "_");
-            filename = strcat(filename, string(FL_end));
-            filename = strcat(filename, "_flow");
-            filename = strcat(filename, flow_triplet_str);
-            filename = strcat(filename, "_graph");
+    times = {'15_00', '15_15', '15_30', '15_45', '16_00', '16_15', '16_30', '16_45',...
+             '17_00', '17_15', '17_30'};
+    FL_start = 315; FL_end = 325;
 
-            full_filename = fullfile('.', 'figures', 'mincut_with_margins', filename);
+    filename = strcat("Time_", times{t});
+    filename = strcat(filename, "_");
+    filename = strcat(filename, times{t+1});
+    filename = strcat(filename, "_FL_");
+    filename = strcat(filename, string(FL_start));
+    filename = strcat(filename, "_");
+    filename = strcat(filename, string(FL_end));
+    filename = strcat(filename, "_flow");
+    filename = strcat(filename, flow_triplet_str);
+    filename = strcat(filename, "_graph");
 
-            saveas(fig, full_filename, 'png');
-            clf(fig);
+    full_filename = fullfile('.', 'figures', 'mincut_with_margins', filename);
 
-            icas_function_plot_mincut(t, flow_triplet_str, short_path, sector_pgon, ...
-                T, B, weather_polygons);
-        end
-% %     end
-% end
+    saveas(fig, full_filename, 'png');
+    clf(fig);
+
+    icas_function_plot_mincut(t, flow_triplet_str, short_path, sector_pgon, ...
+        T, B, weather_polygons, weather_polygons_orig);
+end
 disp("function_Wmincut_draw end")
 end
 
@@ -282,9 +245,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function icas_function_plot_mincut(t, flow_triplet_str, short_path, sector_pgon, ...
-    T, B, weather_polygons)
-
-global nowcast
+    T, B, weather_polygons, weather_polygons_orig)
 
 disp("icas_function_plot_mincut")
 [lon_c, lat_c] = centroid(sector_pgon);
@@ -303,124 +264,115 @@ h2 = plot(B_x, B_y, 'Linewidth', 2, 'Color', 'r', 'Marker', 'x')
 
 % name_alph = 'a':'z';
 
-% for t = 1:nT
-%     for m = 1:nM
+nw_orig = numel(weather_polygons_orig); % number of original weather polygons
+
+% Select original weather cells within the sector
+count = 0;
+weather_in = [];
         
-        nw = numel(weather_polygons); % number of weather polygons
-        
-        % Select weather cells within the sector
-        count = 0;
-        weather_in = [];
-        
-        for i = 1:nw
+for i = 1:nw_orig
             
-            polyout = intersect(sector_pgon, weather_polygons(i));
+    polyout = intersect(sector_pgon, weather_polygons_orig(i));
             
-            if polyout.NumRegions>0 
-                weather_in = [weather_in, i];
-                count = count+1;
+    if polyout.NumRegions>0 
+        weather_in = [weather_in, i];
+        count = count+1;
                 
-                w_vertices = weather_polygons(i).Vertices;
-                [y, x] = function_spherical_to_eq_azimuth(w_vertices(:,2), w_vertices(:,1), lat_c, lon_c);
-                w_pgon_xy = polyshape(x,y);
-                polyout = intersect(sector_pgon_xy, w_pgon_xy);
-                fig = plot(polyout, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.4)
+        w_vertices = weather_polygons_orig(i).Vertices;
+        [y, x] = function_spherical_to_eq_azimuth(w_vertices(:,2), w_vertices(:,1), lat_c, lon_c);
+        w_pgon_xy = polyshape(x,y);
+        polyout = intersect(sector_pgon_xy, w_pgon_xy);
+        fig = plot(polyout, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.4)
 
-                if ~nowcast
-                    margin = 25002; % 25002 meters = 13.5 NM
-                    enlargedPoly = polybuffer(polyout, margin);
-                    fig = plot(enlargedPoly, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.3);
-                end
+        x_w{count} = polyout.Vertices(:,1);
+        y_w{count} = polyout.Vertices(:,2);
+    end
+end
 
-                x_w{count} = polyout.Vertices(:,1);
-                y_w{count} = polyout.Vertices(:,2);
+nw = numel(weather_polygons); % number of weather polygons
+        
+% Select weather cells within the sector
+count = 0;
+weather_in = [];
+        
+for i = 1:nw
+            
+    polyout = intersect(sector_pgon, weather_polygons(i));
+            
+    if polyout.NumRegions>0 
+        weather_in = [weather_in, i];
+        count = count+1;
+                
+        w_vertices = weather_polygons(i).Vertices;
+        [y, x] = function_spherical_to_eq_azimuth(w_vertices(:,2), w_vertices(:,1), lat_c, lon_c);
+        w_pgon_xy = polyshape(x,y);
+        polyout = intersect(sector_pgon_xy, w_pgon_xy);
+        fig = plot(polyout, 'EdgeColor', [199, 0, 57 ]/255, 'FaceColor', [199, 0, 57 ]/255, 'FaceAlpha', 0.2)
+
+        x_w{count} = polyout.Vertices(:,1);
+        y_w{count} = polyout.Vertices(:,2);
+    end
+end
+
+% Create graph
+NW = length(weather_in); % Number of weather cells
+NG = 2 + NW; % Number of nodes in the graph
+        
+% 1) nodes and edges
+% nodenames = ['T', graph_names, 'B'];
+nodes_comb = nchoosek(1:NG,2);
+sg = nodes_comb(:,1)'; tg = nodes_comb(:,2)';
+
+% 2) weights
+weights = zeros(size(sg));
+
+[weights(NG-1), x1, x2] = boundary_to_boundary_fun(B_x, B_y, T_x, T_y);
+        
+h3 = plot([x1(1), x2(1)], [x1(2), x2(2)], 'color',[0 0.5 0],'linestyle',':', 'Linewidth', 2)
+
+for i = 1:NW
+
+    x = x_w{i};
+    y = y_w{i};
+    
+    if isempty(polyxpoly(T_x, T_y, x, y))
+        [weights((sg==1)&(tg==(i+1))), x1, x2] = boundary_to_boundary_fun(T_x, T_y, x, y); % T
+
+        if short_path(2) == i+1
+            h4 = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
+        end
+    end
+    if isempty(polyxpoly(B_x, B_y, x, y))
+        [weights((sg==(i+1))&(tg==NG)), x1, x2] = boundary_to_boundary_fun(B_x, B_y, x, y); % B
+
+        if short_path(length(short_path)-1) == i+1
+            h4 = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:', 'Linewidth', 2)
+        end
+    end
+            
+    % for each weather cell
+            
+    for j = i+1:NW
+        x2 = x_w{j};
+        y2 = y_w{j};
+        
+        [weights((sg==(i+1))&(tg==(j+1))), x1, x2] = boundary_to_boundary_fun(x2, y2, x, y);
+
+        edge_in_short_parth = false;
+        pos1 = find(short_path == i+1);
+        if ~isempty(pos1)
+            if (short_path(pos1+1)==j+1) || (short_path(pos1-1)==j+1)
+                edge_in_short_parth = true;
             end
         end
-        
-        % Create graph
-        NW = length(weather_in); % Number of weather cells
-        NG = 2 + NW; % Number of nodes in the graph
-        
-        % 1) nodes and edges
-%         nodenames = ['T', graph_names, 'B'];
-        nodes_comb = nchoosek(1:NG,2);
-        sg = nodes_comb(:,1)'; tg = nodes_comb(:,2)';
-        
-        % 2) weights
-        weights = zeros(size(sg));
-        
-        [weights(NG-1), x1, x2] = boundary_to_boundary_fun(B_x, B_y, T_x, T_y);
-        
-        h3 = plot([x1(1), x2(1)], [x1(2), x2(2)], 'color',[0 0.5 0],'linestyle',':', 'Linewidth', 2)
 
-        for i = 1:NW
-            
-            x = x_w{i};
-            y = y_w{i};
-            
-            if isempty(polyxpoly(T_x, T_y, x, y))
-                [weights((sg==1)&(tg==(i+1))), x1, x2] = boundary_to_boundary_fun(T_x, T_y, x, y); % T
-
-                if ~nowcast
-                    % 13.5 NM = 25002 meters
-                    weights((sg==1)&(tg==(i+1))) = weights((sg==1)&(tg==(i+1))) - 25002;
-                    if weights((sg==1)&(tg==(i+1))) < 0
-                        weights((sg==1)&(tg==(i+1))) = 0;
-                    end
-                end
-
-                if short_path(2) == i+1
-                    h4 = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
-                end
-            end
-            if isempty(polyxpoly(B_x, B_y, x, y))
-                [weights((sg==(i+1))&(tg==NG)), x1, x2] = boundary_to_boundary_fun(B_x, B_y, x, y); % B
-
-                if ~nowcast
-                    % 13.5 NM = 25002 meters
-                    weights((sg==(i+1))&(tg==NG)) = weights((sg==(i+1))&(tg==NG)) - 25002;
-                    if weights((sg==(i+1))&(tg==NG)) < 0
-                        weights((sg==(i+1))&(tg==NG)) = 0;
-                    end
-                end
-
-                if short_path(length(short_path)-1) == i+1
-                    h4 = plot([x1(1), x2(1)], [x1(2), x2(2)], 'b:', 'Linewidth', 2)
-                end
-            end
-            
-            % for each weather cell
-            
-            for j = i+1:NW
-                x2 = x_w{j};
-                y2 = y_w{j};
-                
-                [weights((sg==(i+1))&(tg==(j+1))), x1, x2] = boundary_to_boundary_fun(x2, y2, x, y);
-
-                if ~nowcast
-                    % 27 NM = 50004 meters
-                    weights((sg==(i+1))&(tg==(j+1))) = weights((sg==(i+1))&(tg==(j+1))) - 50004;
-                    if weights((sg==(i+1))&(tg==(j+1))) < 0
-                        weights((sg==(i+1))&(tg==(j+1))) = 0;
-                    end
-                end
-
-
-                edge_in_short_parth = false;
-                pos1 = find(short_path == i+1);
-                if ~isempty(pos1)
-                    if (short_path(pos1+1)==j+1) || (short_path(pos1-1)==j+1)
-                        edge_in_short_parth = true;
-                    end
-                end
-
-                if edge_in_short_parth
-                    h4 = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
-                end
-                
-            end
-            
+        if edge_in_short_parth
+            h4 = plot([x1(1), x2(1)], [x1(2), x2(2)],'b:', 'Linewidth', 2)
         end
+
+    end
+
+end
 
 ax = gca; % Get current axes
 ax.XTick = []; % Remove x-axis ticks

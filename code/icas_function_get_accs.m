@@ -66,12 +66,12 @@ main_airspace_pgons = cell(nT, num_FL_bands, 1);
 
 adjacent_airspace_pgons = cell(nT, num_FL_bands, N); 
 
-% 10 time intervals, 6 altitude bands, 4 ACCs
+% 10 time intervals, 8 FL bands, 7 ACCs
 
 % Iterate through times
 for t = 1:nT
 
-    % Iterate through altitude bands
+    % Iterate through flight level bands
     for h = 1:num_FL_bands
 
         FL_start = flight_levels(h);
@@ -134,7 +134,7 @@ for t = 1:nT
                             airblock_pgon = polyshape(airblock_coord);
                             acc_pgon = union(acc_pgon, airblock_pgon);
                         end
-                    end % airblocke
+                    end % airblock
                 end % sectors
             end % configurations (used only one)
         
@@ -163,20 +163,22 @@ for t = 1:nT
                 main_acc_data{t,h,1}(1).geometry.coordinates(:,:,2) = acc_pgon.Vertices(:,2)';
             
             else
+                %if ~isempty(acc_pgon.Vertices)
 
-                adjacent_airspace_pgons{t, h, adj_num} = acc_pgon;
+                    adjacent_airspace_pgons{t, h, adj_num} = acc_pgon;
 
-                adjacent_sectors_data{t, h, adj_num}(1,1) = struct('properties',[], 'geometry', []);
+                    adjacent_sectors_data{t, h, adj_num}(1,1) = struct('properties',[], 'geometry', []);
 
-                adjacent_sectors_data{t,h,adj_num}(1).properties.DESIGNATOR = acc;
-                adjacent_sectors_data{t,h,adj_num}(1).properties.LOWER_LIMIT_VALUE = flight_levels(h);
-                adjacent_sectors_data{t,h,adj_num}(1).properties.UPPER_LIMIT_VALUE = flight_levels(h+1);
+                    adjacent_sectors_data{t,h,adj_num}(1).properties.DESIGNATOR = acc;
+                    adjacent_sectors_data{t,h,adj_num}(1).properties.LOWER_LIMIT_VALUE = flight_levels(h);
+                    adjacent_sectors_data{t,h,adj_num}(1).properties.UPPER_LIMIT_VALUE = flight_levels(h+1);
 
-                adjacent_sectors_data{t,h,adj_num}(1).geometry.coordinates = zeros(1,length(acc_pgon.Vertices),2);
-                adjacent_sectors_data{t,h,adj_num}(1).geometry.coordinates(:,:,1) = acc_pgon.Vertices(:,1)';
-                adjacent_sectors_data{t,h,adj_num}(1).geometry.coordinates(:,:,2) = acc_pgon.Vertices(:,2)';
+                    adjacent_sectors_data{t,h,adj_num}(1).geometry.coordinates = zeros(1,length(acc_pgon.Vertices),2);
+                    adjacent_sectors_data{t,h,adj_num}(1).geometry.coordinates(:,:,1) = acc_pgon.Vertices(:,1)';
+                    adjacent_sectors_data{t,h,adj_num}(1).geometry.coordinates(:,:,2) = acc_pgon.Vertices(:,2)';
 
-                adj_num = adj_num +1;
+                    adj_num = adj_num +1;
+                %end
             end
         end % ACCs
 
@@ -188,6 +190,7 @@ for t = 1:nT
         acc_pgon = adjacent_airspace_pgons{t, h, 6};
         acc_pgon = subtract(acc_pgon, adjacent_airspace_pgons{t, h, 5});
         adjacent_airspace_pgons{t, h, 6} = acc_pgon;
+
     end % altitude bands
 end % time intervals
 
