@@ -17,7 +17,7 @@ for i = 1:nab
     % Get main and adjacent ACCs for the current altitude
     [main_sector, adjacent_sectors] = get_sectors_at_altitude( ...
         main_acc, adjacent_accs, a_band(i));
-    
+
     [sectors_pgon, adj_pgon] = icas_function_sector_adjacent_pgon_a_band(main_sector,...
         adjacent_sectors, a_band(i));
     %sector_ab{i} = sectors_pgon{k};
@@ -33,12 +33,12 @@ for i = 1:nab
     for n = 1:nAdj
         in = inpolygon(sectors_pgon{1}.Vertices(:,1),sectors_pgon{1}.Vertices(:,2)...
             ,adj_pgon{n}.Vertices(:,1),adj_pgon{n}.Vertices(:,2));
-        
         edge_data(:,n+nSec) = in;  
     end
     
     % All possible triplets for sector j at altitude band i
-    all_edges = 1:(nSec+ nAdj); all_edges = all_edges(any(edge_data));
+    all_edges = 1:(nSec+ nAdj);
+    all_edges = all_edges(any(edge_data));
 
     if length(all_edges)>1
         ntriplets = nchoosek(length(all_edges),2);

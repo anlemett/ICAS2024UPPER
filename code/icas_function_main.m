@@ -16,7 +16,6 @@ function ASCR = icas_function_main()
 %   Available sector capacity ratio ASCR for EDUUUTAS ACC
 %  for day 2023-06-08, time from 15.00 to 17.30
 
-
     % Vector of time stamps and airspace configuration
 
     % Time 
@@ -40,7 +39,6 @@ function ASCR = icas_function_main()
     % Load the main sector (ACC) and adjacent sectors (ACCs)
 
     [main_ACC, adjacent_ACCs] = icas_function_get_accs();
-
 
     %% Read  weather data
 

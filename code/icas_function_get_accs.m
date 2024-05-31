@@ -80,6 +80,8 @@ for t = 1:nT
         adj_num = 1;
       
         % Iterate through all ACCs
+        LOVV1CTA_in_use = false;
+        LOVVCTA_in_use = false;
 
         for a = 1:num_ACC
     
@@ -163,34 +165,49 @@ for t = 1:nT
                 main_acc_data{t,h,1}(1).geometry.coordinates(:,:,2) = acc_pgon.Vertices(:,2)';
             
             else
-                %if ~isempty(acc_pgon.Vertices)
-
+                if ~isempty(acc_pgon.Vertices)
+                    if strcmp(acc, 'LOVV1CTA')
+                        LOVV1CTA_in_use = true;
+                    end
+                    if strcmp(acc, 'LOVVCTA')
+                        LOVVCTA_in_use = true;
+                    end
                     adjacent_airspace_pgons{t, h, adj_num} = acc_pgon;
-
                     adjacent_sectors_data{t, h, adj_num}(1,1) = struct('properties',[], 'geometry', []);
-
                     adjacent_sectors_data{t,h,adj_num}(1).properties.DESIGNATOR = acc;
                     adjacent_sectors_data{t,h,adj_num}(1).properties.LOWER_LIMIT_VALUE = flight_levels(h);
                     adjacent_sectors_data{t,h,adj_num}(1).properties.UPPER_LIMIT_VALUE = flight_levels(h+1);
-
                     adjacent_sectors_data{t,h,adj_num}(1).geometry.coordinates = zeros(1,length(acc_pgon.Vertices),2);
                     adjacent_sectors_data{t,h,adj_num}(1).geometry.coordinates(:,:,1) = acc_pgon.Vertices(:,1)';
                     adjacent_sectors_data{t,h,adj_num}(1).geometry.coordinates(:,:,2) = acc_pgon.Vertices(:,2)';
-
                     adj_num = adj_num +1;
-                %end
+                end
             end
         end % ACCs
 
-        % From EDUUUTAS remove intersection with LOVV1CTA
-        acc_pgon = main_airspace_pgons{t, h, 1};
-        acc_pgon = subtract(acc_pgon, adjacent_airspace_pgons{t, h, 5});
-        main_airspace_pgons{t, h, 1} = acc_pgon;
-        % From LOVVCTA remove intersection with LOVV1CTA
-        acc_pgon = adjacent_airspace_pgons{t, h, 6};
-        acc_pgon = subtract(acc_pgon, adjacent_airspace_pgons{t, h, 5});
-        adjacent_airspace_pgons{t, h, 6} = acc_pgon;
+        if LOVV1CTA_in_use
+            % From EDUUUTAS (1) remove intersection with LOVV1CTA (5)
+            acc_pgon = main_airspace_pgons{t, h, 1};
+            intersectionPoly = intersect(acc_pgon, adjacent_airspace_pgons{t, h, 5});
+            acc_pgon = subtract(acc_pgon, intersectionPoly);
+            main_airspace_pgons{t, h, 1} = acc_pgon;
+            main_acc_data{t,h,1}(1).geometry.coordinates = zeros(1,length(acc_pgon.Vertices),2);
+            main_acc_data{t,h,1}(1).geometry.coordinates(:,:,1) = acc_pgon.Vertices(:,1)';
+            main_acc_data{t,h,1}(1).geometry.coordinates(:,:,2) = acc_pgon.Vertices(:,2)';
+        end
+        if LOVV1CTA_in_use && LOVVCTA_in_use
+            % From LOVVCTA (6) remove intersection with LOVV1CTA (5)
+            acc_pgon = adjacent_airspace_pgons{t, h, 6};
+            intersectionPoly = intersect(acc_pgon, adjacent_airspace_pgons{t, h, 5});
+            acc_pgon = subtract(acc_pgon, intersectionPoly);
+            adjacent_airspace_pgons{t, h, 6} = acc_pgon;
+            adjacent_sectors_data{t,h,6}(1).geometry.coordinates = zeros(1,length(acc_pgon.Vertices),2);
+            adjacent_sectors_data{t,h,6}(1).geometry.coordinates(:,:,1) = acc_pgon.Vertices(:,1)';
+            adjacent_sectors_data{t,h,6}(1).geometry.coordinates(:,:,2) = acc_pgon.Vertices(:,2)';
+            LOVV1CTA_in_use = false;
+            LOVVCTA_in_use = false;
 
+        end
     end % altitude bands
 end % time intervals
 

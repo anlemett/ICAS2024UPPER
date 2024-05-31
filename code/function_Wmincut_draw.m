@@ -383,8 +383,10 @@ axis off; % Turn off the axis
 ax.XLabel = []; ax.YLabel = []; % Remove the axis labels
 
 % Create custom legend
-legend([h1, h2, h3, h4], {'Top', 'Bottom', 'Mincut without weather', 'Mincut with weather'},...
-    'Location', 'southeast');
+if length(short_path)>2
+    legend([h1, h2, h3, h4], {'Top', 'Bottom', 'Mincut without weather', 'Mincut with weather'},...
+        'Location', 'southeast');
+end
 
 times = {'15_00', '15_15', '15_30', '15_45', '16_00', '16_15', '16_30', '16_45',...
          '17_00', '17_15', '17_30'};

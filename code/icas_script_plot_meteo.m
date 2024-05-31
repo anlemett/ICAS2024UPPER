@@ -8,8 +8,6 @@
 % together with weather obstacles
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function icas_function_plot_meteo()
-
 clear; clc; close all;
 warning('off');
 
@@ -233,4 +231,3 @@ for t = 1:nT
         saveas(fig, full_filename, 'png');
         clf(fig);
     end
-end
